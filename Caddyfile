@@ -1,6 +1,0 @@
-{$DOMAIN} {
-	request_body {
-		max_size {$MAX_UPLOAD_MB:500}MB
-	}
-	reverse_proxy app:3000
-}

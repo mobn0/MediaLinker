@@ -1,9 +1,13 @@
 name: noecore-medialinker
 
+# Designed for Coolify (Traefik handles HTTPS). In Coolify, set the app service's
+# Domains field to https://<your-domain>:3000 and set DOMAIN to the bare hostname.
 services:
   app:
     build: .
     restart: unless-stopped
+    expose:
+      - "3000"
     environment:
       DOMAIN: ${DOMAIN:?Set DOMAIN, e.g. DOMAIN=media.example.com}
       SCHEME: ${SCHEME:-https}
@@ -11,23 +15,5 @@ services:
     volumes:
       - uploads:/data/uploads
 
-  # Reverse proxy with automatic HTTPS for $DOMAIN (ports 80/443 must be reachable).
-  caddy:
-    image: caddy:2-alpine
-    restart: unless-stopped
-    depends_on: [app]
-    environment:
-      DOMAIN: ${DOMAIN:?Set DOMAIN, e.g. DOMAIN=media.example.com}
-      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-500}
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-
 volumes:
   uploads:
-  caddy_data:
-  caddy_config:
