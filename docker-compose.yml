@@ -27,7 +27,7 @@ services:
     hostname: medialinker
     environment:
       TS_AUTHKEY: ${TS_AUTHKEY:?Set TS_AUTHKEY (reusable Tailscale auth key)}
-      TS_EXTRA_ARGS: --exit-node=${TS_EXIT_NODE:?Set TS_EXIT_NODE to your home node's Tailscale IP or name}
+      TS_EXTRA_ARGS: --exit-node=${TS_EXIT_NODE:?Set TS_EXIT_NODE to your home node's Tailscale IP (100.x.y.z), not its name}
       TS_USERSPACE: "true"
       TS_SOCKS5_SERVER: 0.0.0.0:1055
       TS_STATE_DIR: /var/lib/tailscale
