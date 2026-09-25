@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noecore MediaLinker</title>
+<style>
+  :root { --bg:#0e0f13; --card:#171922; --line:#2a2d3a; --text:#e8e9ef; --dim:#8b8fa3; --accent:#7c5cff; --ok:#3ddc97; --err:#ff5c7a; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; display:grid; place-items:center; padding:24px 16px; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  main { width:100%; max-width:560px; }
+  h1 { margin:0 0 4px; font-size:2rem; letter-spacing:-.02em; }
+  h1 span { color:var(--accent); }
+  p.sub { margin:0 0 24px; color:var(--dim); }
+  #drop { border:2px dashed var(--line); border-radius:16px; background:var(--card); padding:48px 20px; text-align:center; cursor:pointer; transition:.15s; }
+  #drop.over, #drop:hover { border-color:var(--accent); }
+  #drop small { color:var(--dim); display:block; margin-top:6px; }
+  #bar { height:6px; background:var(--line); border-radius:3px; margin-top:16px; overflow:hidden; display:none; }
+  #bar i { display:block; height:100%; width:0; background:var(--accent); transition:width .1s; }
+  #result { margin-top:16px; display:none; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  #result.err { border-color:var(--err); color:var(--err); }
+  #result .row { display:flex; gap:8px; }
+  #result input { flex:1; min-width:0; background:var(--bg); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:10px; font:inherit; }
+  button { background:var(--accent); color:#fff; border:0; border-radius:8px; padding:10px 16px; font:inherit; cursor:pointer; }
+  #result a { color:var(--ok); font-size:.9rem; display:inline-block; margin-top:8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Noecore <span>MediaLinker</span></h1>
+  <p class="sub">Upload a media file, get a direct link to it.</p>
+  <label id="drop">
+    <input id="file" type="file" hidden>
+    Drop a file here or click to choose
+    <small id="hint">mp3, mp4, mov, png, jpg, svg and more</small>
+  </label>
+  <div id="bar"><i></i></div>
+  <div id="result"></div>
+</main>
+<script>
+const drop = document.getElementById('drop'), input = document.getElementById('file');
+const bar = document.getElementById('bar'), fill = bar.firstElementChild, result = document.getElementById('result');
+
+fetch('/config').then(r => r.json()).then(c => {
+  document.getElementById('hint').textContent = `Max ${c.maxMb} MB · ${c.extensions.map(e => e.slice(1)).join(', ')}`;
+}).catch(() => {});
+
+['dragenter','dragover'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('over'); }));
+['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('over'); }));
+drop.addEventListener('drop', ev => { if (ev.dataTransfer.files[0]) send(ev.dataTransfer.files[0]); });
+input.addEventListener('change', () => { if (input.files[0]) send(input.files[0]); input.value = ''; });
+
+function show(html, err) { result.className = err ? 'err' : ''; result.style.display = 'block'; result.innerHTML = html; }
+const esc = s => s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function send(file) {
+  result.style.display = 'none'; bar.style.display = 'block'; fill.style.width = '0';
+  const fd = new FormData(); fd.append('file', file);
+  const xhr = new XMLHttpRequest();
+  xhr.open('POST', '/upload');
+  xhr.upload.onprogress = e => { if (e.lengthComputable) fill.style.width = (e.loaded / e.total * 100) + '%'; };
+  xhr.onload = () => {
+    bar.style.display = 'none';
+    let d = {}; try { d = JSON.parse(xhr.responseText); } catch {}
+    if (xhr.status !== 200 || !d.url) return show(esc(d.error || 'Upload failed'), true);
+    show(`<div class="row"><input id="u" readonly value="${esc(d.url)}"><button id="c">Copy</button></div><a href="${esc(d.url)}" target="_blank" rel="noopener">Open file ↗</a>`);
+    const u = document.getElementById('u'), c = document.getElementById('c');
+    u.select();
+    c.onclick = () => { navigator.clipboard.writeText(d.url).then(() => c.textContent = 'Copied!'); };
+  };
+  xhr.onerror = () => { bar.style.display = 'none'; show('Network error', true); };
+  xhr.send(fd);
+}
+</script>
+</body>
+</html>
