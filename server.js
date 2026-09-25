@@ -68,6 +68,7 @@ app.post('/upload', (req, res) => {
 const YT_HOSTS = new Set(['youtube.com', 'www.youtube.com', 'm.youtube.com', 'music.youtube.com', 'youtu.be']);
 const YT_TIMEOUT_MS = 10 * 60 * 1000;
 const YT_MAX_JOBS = parseInt(process.env.YT_MAX_JOBS || '2', 10);
+const YT_PROXY = process.env.YT_PROXY; // e.g. socks5h://tailscale:1055 (routes yt-dlp through the home exit node)
 let ytJobs = 0;
 
 app.post('/youtube', express.json({ limit: '4kb' }), (req, res) => {
@@ -83,6 +84,7 @@ app.post('/youtube', express.json({ limit: '4kb' }), (req, res) => {
   const id = crypto.randomBytes(6).toString('base64url');
   const args = [
     '--no-playlist', '--no-warnings', '--js-runtimes', 'node',
+    ...(YT_PROXY ? ['--proxy', YT_PROXY] : []),
     '--max-filesize', `${MAX_MB}M`,
     '-o', path.join(UPLOAD_DIR, `${id}.%(ext)s`),
     ...(format === 'mp3'
