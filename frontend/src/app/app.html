@@ -1,0 +1,35 @@
+<main>
+  <h1 nz-typography>Noecore MediaLinker</h1>
+  <p nz-typography nzType="secondary">Upload a media file or grab a YouTube video, get a direct link to it.</p>
+
+  <nz-card>
+    <nz-tabs>
+      <nz-tab nzTitle="Upload file">
+        <nz-upload nzType="drag" nzAction="/upload" nzName="file" [nzLimit]="1" (nzChange)="onChange($event)">
+          <p class="ant-upload-drag-icon"><nz-icon nzType="inbox" /></p>
+          <p class="ant-upload-text">Click or drag a file here to upload</p>
+          <p class="ant-upload-hint">{{ hint() }}</p>
+        </nz-upload>
+      </nz-tab>
+
+      <nz-tab nzTitle="YouTube">
+        <input nz-input placeholder="https://www.youtube.com/watch?v=..." [(ngModel)]="ytUrl" [disabled]="loading()" />
+        <nz-radio-group [(ngModel)]="ytFormat" [nzDisabled]="loading()">
+          <label nz-radio-button nzValue="mp4">MP4 (video)</label>
+          <label nz-radio-button nzValue="mp3">MP3 (audio)</label>
+        </nz-radio-group>
+        <button nz-button nzType="primary" [nzLoading]="loading()" [disabled]="!ytUrl" (click)="convert()">Get link</button>
+      </nz-tab>
+    </nz-tabs>
+  </nz-card>
+
+  @if (url()) {
+    <nz-alert nzType="success" nzShowIcon nzMessage="Your direct link" [nzDescription]="link" />
+    <ng-template #link>
+      <a [href]="url()" target="_blank" rel="noopener" nz-typography nzCopyable [nzCopyText]="url()">{{ url() }}</a>
+    </ng-template>
+  }
+  @if (error()) {
+    <nz-alert nzType="error" nzShowIcon [nzMessage]="error()" />
+  }
+</main>
